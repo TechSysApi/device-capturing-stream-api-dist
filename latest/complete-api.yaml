@@ -6,7 +6,7 @@ info:
     name: 'erkennen codieren pakete'
     email: erkennen.codieren.pakete@post.ch
     version: '@version@'
-  version: 0.1.0-rc.1
+  version: 0.2.0-feature-initial-commit.17
 host: 'server:8080'
 basePath: MQTT
 paths:
