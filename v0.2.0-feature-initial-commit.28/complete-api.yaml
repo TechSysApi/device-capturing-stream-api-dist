@@ -1,0 +1,278 @@
+swagger: '2.0'
+info:
+  title: 'Device Capturing Stream API'
+  description: 'Information about the pets in your garden'
+  contact:
+    name: 'erkennen codieren pakete'
+    email: erkennen.codieren.pakete@post.ch
+    version: '@version@'
+  version: 0.2.0-feature-initial-commit.28
+host: 'server:8080'
+basePath: MQTT
+paths:
+  '{sortingUnitKey}/reading/v1/coding/capture-request/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
+    get:
+      summary: 'VOL-Scanner Capture-Request'
+      description: 'Requests the physical properties, images and barcodes of a mailpiece'
+      tags:
+        - Device
+      parameters:
+        -
+          name: sortingUnitKey
+          in: path
+          description: 'Identifier of the sorting unit'
+          type: string
+        -
+          name: srcSystem
+          in: path
+          description: '3-letter uppercase name identifying the system issuing the message'
+          type: string
+          default: VOL
+        -
+          name: srcInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance issuing the message'
+          type: string
+          default: '001'
+        -
+          name: destSystem
+          in: path
+          description: '3-letter uppercase name identifying the system receiving the message'
+          type: string
+          default: MMCB
+        -
+          name: destInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance receiving the message'
+          type: string
+          default: WHR01
+        -
+          name: conversationId
+          in: path
+          description: 'ID included in the read-event and request-status topics in order to correlate the messages'
+          type: string
+          default: '12345'
+      responses:
+        default:
+          schema: {$ref: 'CaptureRequest'}
+    x-data:
+      classification: P0
+      confidentiality: C2
+  '{sortingUnitKey}/reading/v1/coding/capture-result/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
+    get:
+      summary: 'VOL-Scanner Capture-Result'
+      description: 'Sends a result of the physical properties, images and barcodes of a mailpiece'
+      tags:
+        - Control
+      parameters:
+        -
+          name: sortingUnitKey
+          in: path
+          description: 'Identifier of the sorting unit'
+          type: string
+        -
+          name: srcSystem
+          in: path
+          description: '3-letter uppercase name identifying the system issuing the message'
+          type: string
+          default: VOL
+        -
+          name: srcInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance issuing the message'
+          type: string
+          default: '001'
+        -
+          name: destSystem
+          in: path
+          description: '3-letter uppercase name identifying the system receiving the message'
+          type: string
+          default: MMCB
+        -
+          name: destInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance receiving the message'
+          type: string
+          default: WHR01
+        -
+          name: conversationId
+          in: path
+          description: 'ID included in the read-event and request-status topics in order to correlate the messages'
+          type: string
+          default: '12345'
+      responses:
+        default:
+          schema: {$ref: 'CaptureResult'}
+    x-data:
+      classification: P0
+      confidentiality: C2
+definitions:
+  DateTime:
+    type: string
+    description: "<a href=\"https://swagger.io/docs/specification/data-models/data-types/#string\">String @format date-time</a>,\nas defined by <a href=\"https://tools.ietf.org/html/rfc3339#section-5.6\">RFC 3339, section 5.6</a>,\nfor example: <code>2014-05-22T10:42:42.542+00:00</code>."
+    format: date-time
+  CaptureData:
+    type: object
+    properties:
+      state:
+        $ref: 'State'
+        description: 'The state of the result.'
+      errorType:
+        $ref: 'ErrorType'
+        description: 'Type of the error occured during capturing.'
+      instance:
+        type: string
+        description: 'Instance of the device.'
+      images:
+        type: array
+        items:
+          $ref: 'Image'
+        description: 'The captured images.'
+      dimensions:
+        $ref: 'Dimensions'
+        description: 'Dimensions of the mailpiece.'
+      captureSteps:
+        type: array
+        items:
+          $ref: 'CaptureStep'
+        description: 'Captured steps during the workflow.'
+    required:
+      - state
+      - instance
+      - captureSteps
+    additionalProperties: false
+  Int:
+    type: integer
+    description: '<a href="https://swagger.io/docs/specification/data-models/data-types/#numbers">Number @asType integer</a>'
+  CaptureRequest:
+    type: object
+    properties:
+      timestamp:
+        $ref: 'DateTime'
+        description: 'The timestamp of the message.'
+      processingItemId:
+        type: string
+        description: "Identifier generated by the sorting unit for one sorting cycle. This id is only valid during the\nsorting cycle and might be reused by the sorting unit quickly for a next sorting cycle."
+      sortingUnit:
+        $ref: 'SortingUnit'
+        description: 'Unique key identifying the location.'
+      requestedCaptures:
+        type: array
+        items:
+          $ref: 'CaptureType'
+        description: 'The requested captures.'
+      measuringAidHeight:
+        $ref: 'Int'
+        description: 'The height in mm which has to be subtracted from the measured value.'
+    required:
+      - timestamp
+      - processingItemId
+      - sortingUnit
+      - requestedCaptures
+    additionalProperties: false
+  CaptureResult:
+    type: object
+    properties:
+      timestamp:
+        $ref: 'DateTime'
+        description: 'The timestamp of the message.'
+      processingItemId:
+        type: string
+        description: "Identifier generated by the sorting unit for one sorting cycle. This id is only valid during the\nsorting cycle and might be reused by the sorting unit quickly for a next sorting cycle.\nTo correlate event to one sorting cycle use the sortingCycleId."
+      sortingUnit:
+        $ref: 'SortingUnit'
+        description: 'Unique key identifying the location.'
+      retryDelay:
+        $ref: 'Int'
+        description: 'The delay in milliseconds before a request can be resent in case of an error.'
+      captureData:
+        $ref: 'CaptureData'
+        description: 'Data captured by the volume scanner.'
+    required:
+      - timestamp
+      - processingItemId
+      - sortingUnit
+      - captureData
+    additionalProperties: false
+  CaptureStep:
+    type: object
+    properties:
+      startTimestamp:
+        $ref: 'DateTime'
+        description: 'Timestamp when the capturing started.'
+      endTimestamp:
+        $ref: 'DateTime'
+        description: 'Timestamp when the capturing ended.'
+      captureType:
+        $ref: 'CaptureType'
+        description: 'Capture type.'
+    required:
+      - startTimestamp
+      - endTimestamp
+      - captureType
+    additionalProperties: false
+  CaptureType:
+    type: string
+    enum:
+      - DIMENSIONS
+      - IMAGE
+    description: "DIMENSIONS - Measure the dimensions of the mailpiece.\nIMAGE - Capture the image of the mailpiece."
+  Dimensions:
+    type: object
+    properties:
+      dimension1:
+        type: string
+        description: '1st dimension of the mailpiece in millimeters.'
+      dimension2:
+        type: string
+        description: '2nd dimension of the mailpiece in millimeters.'
+      dimension3:
+        type: string
+        description: '3rd dimension of the mailpiece in millimeters.'
+      legalForTrade:
+        type: boolean
+        description: 'Legal for trade information.'
+      alibiId:
+        type: string
+        description: "This ID is needed to find out, what was captured and in case of an error,\nwhy the error happened."
+    required:
+      - dimension1
+      - dimension2
+      - dimension3
+      - legalForTrade
+      - alibiId
+    additionalProperties: false
+  ErrorType:
+    type: string
+    enum:
+      - ERROR1
+      - ERROR2
+    description: "ERROR1 - Error1\nERROR2 - Error2"
+  Image:
+    type: object
+    properties:
+      fileName:
+        type: string
+        description: 'File name and identifier of the image.'
+    required:
+      - fileName
+    additionalProperties: false
+  SortingUnit:
+    type: object
+    properties:
+      sortingUnitKey:
+        type: string
+        description: 'Unique identifier of the sorting unit at a specific location.'
+      locationKey:
+        type: string
+        description: 'Unique key identifying the location.'
+    required:
+      - sortingUnitKey
+      - locationKey
+    additionalProperties: false
+  State:
+    type: string
+    enum:
+      - OK
+      - ERROR
+    description: "OK - The request has been processed successfully.\nERROR - The result led to an error."
