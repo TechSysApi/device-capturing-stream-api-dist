@@ -1,0 +1,312 @@
+swagger: '2.0'
+info:
+  title: 'Device Capturing Stream API'
+  description: 'Information about the pets in your garden'
+  contact:
+    name: 'erkennen codieren pakete'
+    email: erkennen.codieren.pakete@post.ch
+    version: '@version@'
+  version: 0.2.0
+host: 'server:8080'
+basePath: MQTT
+paths:
+  '{sortingUnitKey}/reading/v1/coding/capture-request/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
+    get:
+      summary: 'VOL-Scanner Capture-Request'
+      description: 'Requests the physical properties, images and barcodes of a mailpiece'
+      tags:
+        - Device
+      parameters:
+        -
+          name: sortingUnitKey
+          in: path
+          description: 'Identifier of the sorting unit'
+          type: string
+        -
+          name: srcSystem
+          in: path
+          description: '3-letter uppercase name identifying the system issuing the message'
+          type: string
+          default: VOL
+        -
+          name: srcInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance issuing the message'
+          type: string
+          default: '001'
+        -
+          name: destSystem
+          in: path
+          description: '3-letter uppercase name identifying the system receiving the message'
+          type: string
+          default: MMCB
+        -
+          name: destInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance receiving the message'
+          type: string
+          default: WHR01
+        -
+          name: conversationId
+          in: path
+          description: 'ID included in the read-event and request-status topics in order to correlate the messages'
+          type: string
+          default: '12345'
+      responses:
+        default:
+          schema: {$ref: 'CaptureRequest'}
+    x-data:
+      classification: P0
+      confidentiality: C2
+  '{sortingUnitKey}/reading/v1/coding/capture-result/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
+    get:
+      summary: 'VOL-Scanner Capture-Result'
+      description: 'Sends a result of the physical properties, images and barcodes of a mailpiece'
+      tags:
+        - Control
+      parameters:
+        -
+          name: sortingUnitKey
+          in: path
+          description: 'Identifier of the sorting unit'
+          type: string
+        -
+          name: srcSystem
+          in: path
+          description: '3-letter uppercase name identifying the system issuing the message'
+          type: string
+          default: VOL
+        -
+          name: srcInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance issuing the message'
+          type: string
+          default: '001'
+        -
+          name: destSystem
+          in: path
+          description: '3-letter uppercase name identifying the system receiving the message'
+          type: string
+          default: MMCB
+        -
+          name: destInstance
+          in: path
+          description: 'two-digit padded number identifying the system instance receiving the message'
+          type: string
+          default: WHR01
+        -
+          name: conversationId
+          in: path
+          description: 'ID included in the read-event and request-status topics in order to correlate the messages'
+          type: string
+          default: '12345'
+      responses:
+        default:
+          schema: {$ref: 'CaptureResult'}
+    x-data:
+      classification: P0
+      confidentiality: C2
+definitions:
+  DateTime:
+    type: string
+    description: "<a href=\"https://swagger.io/docs/specification/data-models/data-types/#string\">String @format date-time</a>,\nas defined by <a href=\"https://tools.ietf.org/html/rfc3339#section-5.6\">RFC 3339, section 5.6</a>,\nfor example: <code>2014-05-22T10:42:42.542+00:00</code>."
+    format: date-time
+  CaptureData:
+    type: object
+    properties:
+      instance:
+        type: string
+        description: 'Instance of the device.'
+      images:
+        type: array
+        items:
+          $ref: 'Image'
+        description: 'The captured images.'
+      dimensions:
+        $ref: 'Dimensions'
+        description: 'Dimensions of the mailpiece.'
+      captureSteps:
+        type: array
+        items:
+          $ref: 'CaptureStep'
+        description: 'Captured steps during the workflow.'
+    required:
+      - instance
+      - captureSteps
+    additionalProperties: false
+  Int:
+    type: integer
+    description: '<a href="https://swagger.io/docs/specification/data-models/data-types/#numbers">Number @asType integer</a>'
+  CaptureRequest:
+    type: object
+    properties:
+      timestamp:
+        $ref: 'DateTime'
+        description: 'The timestamp of the message.'
+      processingItemId:
+        type: string
+        description: "Identifier generated by the sorting unit for one sorting cycle. This id is only valid during the\nsorting cycle and might be reused by the sorting unit quickly for a next sorting cycle."
+      sortingUnit:
+        $ref: 'SortingUnit'
+        description: 'Unique key identifying the location.'
+      requestedCaptures:
+        type: array
+        items:
+          $ref: 'CaptureType'
+        description: 'The requested captures.'
+      measuringAidHeight:
+        $ref: 'Int'
+        description: 'The height in mm which has to be subtracted from the measured value.'
+    required:
+      - timestamp
+      - processingItemId
+      - sortingUnit
+      - requestedCaptures
+    additionalProperties: false
+  CaptureResult:
+    type: object
+    properties:
+      timestamp:
+        $ref: 'DateTime'
+        description: 'The timestamp of the message.'
+      processingItemId:
+        type: string
+        description: 'Identifier generated by the sorting unit.'
+      sortingUnit:
+        $ref: 'SortingUnit'
+        description: 'Unique key identifying the location.'
+      captureData:
+        $ref: 'CaptureData'
+        description: "Data captured by the volume scanner.\nEither captureData or errorData must be filled. In case the errorData is filled, the capturing for captureData was not successful."
+      errorData:
+        $ref: 'ErrorData'
+        description: "Error during the process of measuring the parcel by the volume scanner.\nEither captureData or errorData must be filled. In case the errorData is filled, the capturing for captureData was not successful."
+    required:
+      - timestamp
+      - processingItemId
+      - sortingUnit
+    additionalProperties: false
+  CaptureStep:
+    type: object
+    properties:
+      startTimestamp:
+        $ref: 'DateTime'
+        description: 'Timestamp when the capturing started.'
+      endTimestamp:
+        $ref: 'DateTime'
+        description: 'Timestamp when the capturing ended.'
+      captureType:
+        $ref: 'CaptureType'
+        description: 'Capture type.'
+    required:
+      - startTimestamp
+      - endTimestamp
+      - captureType
+    additionalProperties: false
+  CaptureType:
+    type: string
+    enum:
+      - DIMENSIONS
+      - IMAGE
+    description: "DIMENSIONS - Measure the dimensions of the mailpiece.\nIMAGE - Capture the image of the mailpiece."
+  Dimensions:
+    type: object
+    properties:
+      length:
+        type: string
+        description: 'This is the longest side of the mailpiece in millimeters.'
+      width:
+        type: string
+        description: 'This is the 2nd longest side of the mailpiece in millimeters.'
+      height:
+        type: string
+        description: 'This is the shortest side of the mailpiece in millimeters.'
+      legalForTrade:
+        type: boolean
+        description: 'Legal for trade information.'
+      alibiId:
+        type: string
+        description: "This ID is needed to find out, what was captured and in case of an error,\nwhy the error happened."
+    required:
+      - length
+      - width
+      - height
+      - legalForTrade
+      - alibiId
+    additionalProperties: false
+  ErrorData:
+    type: object
+    properties:
+      errorId:
+        $ref: 'Int'
+        description: 'Id of the error occured during capturing.'
+      errorType:
+        $ref: 'ErrorType'
+        description: 'Type of the error occured during capturing.'
+      instance:
+        type: string
+        description: 'Instance of the device.'
+    required:
+      - errorId
+      - errorType
+      - instance
+    additionalProperties: false
+  ErrorType:
+    type: string
+    enum:
+      - TIME_OUT
+      - NO_IMAGE_GRABBED
+      - STILL_PROCESSING
+      - EXCEPTION_IN_VOLUME_PROCESSING
+      - TOO_MANY_EMPTY_SCANS_LMS1
+      - TOO_MANY_INVALID_SCANS_LMS1
+      - TOO_MANY_EMPTY_SCANS_LMS2
+      - TOO_MANY_INVALID_SCANS_LMS2
+      - DIRTY_HEAD_LMS1
+      - DIRTY_HEAD_LMS2
+      - FREQUENCY_TRANSFORMER_VAD
+      - TOLERANCE_REFERENCE_SWITCH
+      - ENCODER_VALUE_NOT_PLAUSIBLE
+      - OBJECT_EXCEEDS_BORDER_TOO_LARGE
+      - OBJECT_EXCEEDS_MAXIMUM_HEIGHT
+      - INITIAL_ZEROING_FAILED
+      - OBJECT_EXCEEDS_MAXIMUM_WIDTH
+      - MORE_THAN_ONE_OBJECT_DUST
+      - OBJECT_TOO_SMALL
+      - OBJECT_EXCEEDS_BORDER_BACK_ZMIN
+      - OBJECT_EXCEEDS_BORDER_FRONT_ZMAX
+      - OBJECT_EXCEEDS_BORDER_LEFT_XMIN
+      - OBJECT_EXCEEDS_BORDER_RIGHT_XMAX
+      - CHECKING_SECUREBOOT
+      - SECUREBOOT_NOT_ACTIVE
+      - FOCUS_ON_CENTER_AREA_NOT_CLEAR
+      - FOCUS_ON_CENTER_TOO_BIG_XMIN
+      - FOCUS_ON_CENTER_TOO_BIG_XMAX
+      - FOCUS_ON_CENTER_TOO_BIG_BOTH_SIDES
+      - FOCUS_ON_CENTER_OBJECT_EXCEEDS_XMIN
+      - FOCUS_ON_CENTER_OBJECT_EXCEEDS_XMAX
+      - TIME_OUT_REFERENCE_RUN
+      - OTHER_ERROR
+    description: "TIME_OUT - ID:1\nNO_IMAGE_GRABBED - ID:2\nSTILL_PROCESSING - ID:3\nEXCEPTION_IN_VOLUME_PROCESSING - ID:4\nTOO_MANY_EMPTY_SCANS_LMS1 - ID:9\nTOO_MANY_INVALID_SCANS_LMS1 - ID:10\nTOO_MANY_EMPTY_SCANS_LMS2 - ID:11\nTOO_MANY_INVALID_SCANS_LMS2 - ID:12\nDIRTY_HEAD_LMS1 - ID:39\nDIRTY_HEAD_LMS2 - ID:40\nFREQUENCY_TRANSFORMER_VAD - ID:52\nTOLERANCE_REFERENCE_SWITCH - ID:56\nENCODER_VALUE_NOT_PLAUSIBLE - ID:57\nOBJECT_EXCEEDS_BORDER_TOO_LARGE - ID:59\nOBJECT_EXCEEDS_MAXIMUM_HEIGHT - ID:60\nINITIAL_ZEROING_FAILED - ID:61\nOBJECT_EXCEEDS_MAXIMUM_WIDTH - ID:121\nMORE_THAN_ONE_OBJECT_DUST - ID:122\nOBJECT_TOO_SMALL - ID:123\nOBJECT_EXCEEDS_BORDER_BACK_ZMIN - ID:130\nOBJECT_EXCEEDS_BORDER_FRONT_ZMAX - ID:131\nOBJECT_EXCEEDS_BORDER_LEFT_XMIN - ID:132\nOBJECT_EXCEEDS_BORDER_RIGHT_XMAX - ID:133\nCHECKING_SECUREBOOT - ID:147\nSECUREBOOT_NOT_ACTIVE - ID:148\nFOCUS_ON_CENTER_AREA_NOT_CLEAR - ID:149\nFOCUS_ON_CENTER_TOO_BIG_XMIN - ID:150\nFOCUS_ON_CENTER_TOO_BIG_XMAX - ID:151\nFOCUS_ON_CENTER_TOO_BIG_BOTH_SIDES - ID:152\nFOCUS_ON_CENTER_OBJECT_EXCEEDS_XMIN - ID:153\nFOCUS_ON_CENTER_OBJECT_EXCEEDS_XMAX - ID:154\nTIME_OUT_REFERENCE_RUN - ID:155\nOTHER_ERRO - ID:999"
+  Image:
+    type: object
+    properties:
+      fileName:
+        type: string
+        description: 'File name consists of barcode and timestamp (barcode_dateTime.tiff).'
+    required:
+      - fileName
+    additionalProperties: false
+  SortingUnit:
+    type: object
+    properties:
+      sortingUnitKey:
+        type: string
+        description: 'Unique identifier of the sorting unit at a specific location.'
+      locationKey:
+        type: string
+        description: 'Unique key identifying the location.'
+    required:
+      - sortingUnitKey
+      - locationKey
+    additionalProperties: false
