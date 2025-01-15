@@ -6,7 +6,7 @@ info:
     name: 'erkennen codieren pakete'
     email: erkennen.codieren.pakete@post.ch
     version: '@version@'
-  version: 0.2.0-feature-initial-commit.31
+  version: 0.2.0-feature-initial-commit.32
 host: 'server:8080'
 basePath: MQTT
 paths:
@@ -177,10 +177,10 @@ definitions:
         description: 'Unique key identifying the location.'
       captureData:
         $ref: 'CaptureData'
-        description: 'Data captured by the volume scanner.'
+        description: "Data captured by the volume scanner.\nEither captureData or errorData must be filled. In case the errorData is filled, the capturing for captureData was not successful."
       errorData:
         $ref: 'ErrorData'
-        description: 'Error during the process of measuring the parcel by the volume scanner.'
+        description: "Error during the process of measuring the parcel by the volume scanner.\nEither captureData or errorData must be filled. In case the errorData is filled, the capturing for captureData was not successful."
     required:
       - timestamp
       - processingItemId
@@ -293,7 +293,7 @@ definitions:
     properties:
       fileName:
         type: string
-        description: 'File name and identifier of the image.'
+        description: 'File name consists of barcode and timestamp (barcode_dateTime.tiff).'
     required:
       - fileName
     additionalProperties: false
